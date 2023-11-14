@@ -1,0 +1,74 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+---
+title: "DSCC462 Final project- Selenge Tulga"
+output:
+  pdf_document: 
+    latex_engine: xelatex
+  html_document:
+    df_print: paged
+subtitle: Analyzing IMDB movies.
+fontsize: 12pt
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T, eval=T,tidy=TRUE, tidy.opts=list(width.cutoff=60))
+```
+  
+\vspace{5pt}
+Dataset: For my side project, I have chosen to utilize the "Full TMDB Movies Dataset 2023" from Kaggle. This dataset contains a collection of 930,000 movies from the TMDB database, collected in October 2023.
+
+Purpose: Audiovisual input and output devices are in abundance these days and so are movies and films. Everyone watches videos be it on TV, social media, cinemas or streaming platforms. The film industry is arguably one of the most impactful sectors in modern society. 
+IMDb is the world’s most popular and authoritative source for movie, TV, and celebrity content. IMDb users often look at ratings to get an idea of how good movies are, so that they can decide what movies to watch or which ones to prioritize. 
+
+Dimensionality: The dataset is quite extensive, containing 20 columns and over 900,000 rows. However, a rating and vote_cuount columns have 0 values, approximately 60%. This leaves us with over 300,000 rows suitable for project analysis.
+
+Proposed Questions!
+
+Mean Inference: According to last article from Investopedia, the average movie budget in hollywood is 65,000.  We aim to employ mean inference techniques to verify this claim.
+
+Variance Inference: Which column is optimal to use?
+
+Proportion Hypothesis Testing: IMDB indicates that approximately 12% of movie genre are classified as horror. We intend to utilize proportion hypothesis testing to validate this assertion.
+
+Goodness of Fit Hypothesis Test: The proportions of Drama, Comedy, and Action genres, are 43%, 24%, and 39%, respectively. We plan to assess the validity of this claim using a Goodness of Fit hypothesis test.
+
+Chi-square Test: To investigate whether the runtime has an impact on the popularity of the movie. The chi-square test will be employed to determine if there is a correlation between movie runtime and audience engagement.
+
+Chi-square Independence Test: Aim to identify which attributes are strong predictors of whether an movie is classified as top 100 movies of all times.  The chi-square independence test will be used to analyze this relationship
+
+?? Also, identify trends in movie release dates (specially holidays) and analyze their impact on revenue.
+
+
+\vspace{5pt}
+
+1. Cleaning and analyzing data
+```{r}
+movies <- read.csv("TMDB_movie_dataset_v11.csv")
+n <- nrow(movies)
+
+```
+
+```{r}
+sum((movies$budget)> 0 & (movies$revenue)> 0 &(movies$vote_count>0) &(movies$vote_average>0) & (movies$runtime>0))
+sum((movies$budget)> 0 & (movies$runtime>0))
+```
+```{r}
+sum(is.na(movies$release_date))
+sum((movies$revenue)> 0)
+
+summary(movies)
+
+```
+
+```{r}
+#Remove unnecessary columns
+movies$poster_path <- NULL
+movies$homepage <- NULL
+movies$backdrop_path <- NULL
+movies$imdb_id <- NULL
+```
+
+    
