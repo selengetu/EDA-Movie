@@ -19,12 +19,23 @@ knitr::opts_chunk$set(echo = T, eval=T,tidy=TRUE, tidy.opts=list(width.cutoff=60
 
 \vspace{5pt}
 
-1. Cleaning and analyzing data
+1. Loading dataset
 ```{r}
 movies <- read.csv("/Users/selengetulga/Downloads/Fall 2023/DSCC 462/Final/TMDB_movie_dataset_v11.csv")
 n <- nrow(movies)
 
 ```
+
+Columns
+1. Title
+Original name of movies
+
+2. Vote average
+
+
+vote average, vote count, release_date, revenue, runtime, budget, language, popularity, genre
+
+
 
 ```{r}
 df_movies= movies[movies$budget > 0 & movies$revenue> 0 & movies$vote_count>0 & movies$vote_average>0 & movies$runtime>0, ] 
@@ -62,6 +73,7 @@ library(ggplot2)
 hist1 <- ggplot(df_movies, aes(x = vote_average)) + geom_histogram(bins = 15) 
 hist1 <- hist1 + ggtitle("Histogram of Vote Average")
 hist1
+
 ```
 ```{r}
 quantile(vote_average, c(0.2, 0.8))
@@ -90,5 +102,9 @@ sd(vote_average)/mean(vote_average)
 ```{r}
 library(moments) 
 skewness(vote_average)
+```
+
+```{r}
+df_movies$logbudget <- log(df_movies$budget)
 ```
 
