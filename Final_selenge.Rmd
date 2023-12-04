@@ -22,89 +22,209 @@ knitr::opts_chunk$set(echo = T, eval=T,tidy=TRUE, tidy.opts=list(width.cutoff=60
 1. Loading dataset
 ```{r}
 movies <- read.csv("/Users/selengetulga/Downloads/Fall 2023/DSCC 462/Final/TMDB_movie_dataset_v11.csv")
-n <- nrow(movies)
-
+nrow(movies)
 ```
-
-Columns
-1. Title
-Original name of movies
-
-2. Vote average
-
-
-vote average, vote count, release_date, revenue, runtime, budget, language, popularity, genre
-
-
-
-```{r}
-df_movies= movies[movies$budget > 0 & movies$revenue> 0 & movies$vote_count>0 & movies$vote_average>0 & movies$runtime>0, ] 
-dim(df_movies)
-```
-
-
-```{r}
-summary(movies)
-```
-```{r}
-dim(df_movies)
-```
-
 ```{r}
 #Remove unnecessary columns
-df_movies$poster_path <- NULL
-df_movies$homepage <- NULL
-df_movies$backdrop_path <- NULL
-df_movies$imdb_id <- NULL
+movies$poster_path <- NULL
+movies$homepage <- NULL
+movies$backdrop_path <- NULL
+movies$imdb_id <- NULL
 ```
+
+Part 1 - Descriptive Statistics
+
+Analyze the relationship between budget, revenue, and popularity to determine factors that contribute to a movie's success.
+```{r}
+df_budget= movies[movies$budget > 0 & movies$revenue> 0 & movies$popularity> 0 ,] 
+dim(df_budget)
+```
+
 
 ```{r}
-dim(df_movies)
+summary(df_budget)
 ```
-
-
 ```{r}
-vote_average <- df_movies$vote_average
-ceiling(log(length(vote_average), 2)) + 1
-```
+n_pop <- ceiling(log2(length(df_budget$popularity))) + 1
+sprintf("Bin number of popularity: %d", n_pop)
 
+n_rev <- ceiling(log2(length(df_budget$revenue))) + 1
+sprintf("Bin number of revenue: %d", n_pop)
+
+n_bud <- ceiling(log2(length(df_budget$budget))) + 1
+sprintf("Bin number of budget: %d", n_pop)
+```
 ```{r}
 library(ggplot2)
-hist1 <- ggplot(df_movies, aes(x = vote_average)) + geom_histogram(bins = 15) 
-hist1 <- hist1 + ggtitle("Histogram of Vote Average")
+hist1 <- ggplot(df_budget, aes(x = budget)) + geom_histogram(bins = 15)
+hist1 <- hist1 + ggtitle("Histogram of Movie Budget")
 hist1
+```
 
+```{r}
+quantile(df_budget$budget, c(0.2, 0.8))
+IQR(df_budget$budget)
 ```
 ```{r}
-quantile(vote_average, c(0.2, 0.8))
-IQR(vote_average)
-```
-```{r}
-ss <- 1.5 * IQR(vote_average)
+ss <- 1.5 * IQR(df_budget$budget)
 ss
-lf <- quantile(vote_average, 0.25) - ss
+lf <- quantile(df_budget$budget, 0.25) - ss
 lf
-uf <- quantile(vote_average, 0.75) + ss
+uf <- quantile(df_budget$budget, 0.75) + ss
 uf
 ```
     
 ```{r}
-sum(vote_average < lf)
+sum(df_budget$budget < lf)
 
-sum(vote_average > uf)
+sum(df_budget$budget > uf)
 ```
 ```{r}
-var(vote_average)
-sd(vote_average)
-sd(vote_average)/mean(vote_average)
+var(df_budget$budget)
+sd(df_budget$budget)
+sd(df_budget$budget)/mean(df_budget$budget)
 ```
 
 ```{r}
 library(moments) 
-skewness(vote_average)
+skewness(df_budget$budget)
 ```
 
 ```{r}
-df_movies$logbudget <- log(df_movies$budget)
+relative_freq_table <- prop.table(table((df_budget$budget)/ 1e6))
+
+absolute_freq_table <- table((df_budget$budget)/ 1e6)
+```
+
+```{r}
+barplot(relative_freq_table, main = "Relative Frequency Barplot")
+
+# Absolute frequency barplot
+barplot(absolute_freq_table, main = "Absolute Frequency Barplot")
+```
+
+```{r}
+relative_freq_table_rv <- prop.table(table((df_budget$revenue)/ 1e6))
+
+absolute_freq_table_rv <- table((df_budget$revenue)/ 1e6)
+```
+
+```{r}
+if (!requireNamespace("scales", quietly = TRUE)) {
+  install.packages("scales")
+}
+library(scales)
+
+barplot(relative_freq_table_rv, main = "Relative Frequency Barplot", xlab = "Budget (in millions)")
+
+# Absolute frequency barplot with budgets in millions
+barplot(absolute_freq_table_rv, main = "Absolute Frequency Barplot", xlab = "Budget (in millions)")
+
+```
+```{r}
+# Center
+mean_budget <- mean(df_budget$budget)
+median_budget <- median(df_budget$budget)
+mode_budget <- as.numeric(names(sort(table(df_budget$budget), decreasing = TRUE)[1]))
+trimmed_mean_budget <- mean(df_budget$budget, trim = 0.1)
+
+# Dispersion
+iqr_budget <- IQR(df_budget$budget)
+variance_budget <- var(df_budget$budget)
+cv_budget <- sd(df_budget$budget) / mean(df_budget$budget)
+skewness_budget <- skewness(df_budget$budget)
+
+print(paste("Mean:", mean_budget))
+print(paste("Median:", median_budget))
+print(paste("Mode:", mode_budget))
+print(paste("Trimmed Mean (10%):", trimmed_mean_budget))
+print(paste("IQR:", iqr_budget))
+print(paste("Variance:", variance_budget))
+print(paste("Coefficient of Variation:", cv_budget))
+print(paste("Skewness:", skewness_budget))
+
+```
+```{r}
+# Center
+mean_revenue <- mean(df_budget$revenue)
+median_revenue <- median(df_budget$revenue)
+mode_revenue <- as.numeric(names(sort(table(df_budget$revenue), decreasing = TRUE)[1]))
+trimmed_mean_revenue <- mean(df_budget$revenue, trim = 0.1)
+
+# Dispersion
+iqr_revenue <- IQR(df_budget$revenue)
+variance_revenue <- var(df_budget$revenue)
+cv_revenue <- sd(df_budget$budget) / mean(df_budget$revenue)
+skewness_revenue <- skewness(df_budget$revenue)
+
+print(paste("Mean:", mean_revenue))
+print(paste("Median:", median_revenue))
+print(paste("Mode:", mode_revenue))
+print(paste("Trimmed Mean (10%):", trimmed_mean_revenue))
+print(paste("IQR:", iqr_revenue))
+print(paste("Variance:", variance_budget))
+print(paste("Coefficient of Variation:", cv_revenue))
+print(paste("Skewness:", skewness_revenue))
+```
+```{r}
+# Scatterplot
+e_budget <-(df_budget$budget)/ 1e6
+e_revenue <-(df_budget$revenue)/ 1e6
+plot(e_budget, e_revenue, main = "Scatterplot", xlab = "Budget", ylab = "Revenue")
+```
+```{r}
+# Covariance
+covariance <- cov(df_budget$budget, df_budget$revenue)
+print(paste("Covariance:", covariance))
+```
+
+```{r}
+# Histogram with mean and median lines
+hist(e_budget, main = "Histogram", xlab = "Budget", col = "lightblue", border = "black", xlim = c(0, max(e_budget)))
+abline(v = mean_budget, col = "red", lwd = 2)
+abline(v = median_budget, col = "blue", lwd = 2)
+
+```
+
+```{r}
+# Histogram with mean and median lines
+hist(e_revenue, main = "Histogram", xlab = "Budget", col = "lightblue", border = "black", xlim = c(0, max(e_revenue)))
+abline(v = mean_budget, col = "red", lwd = 2)
+abline(v = median_budget, col = "blue", lwd = 2)
+```
+```{r}
+qqplot(qnorm(ppoints(nrow(df_budget))), df_budget$budget,
+       main = "Quantile Plot",
+       xlab = "Theoretical Quantiles",
+       ylab = "Sample Quantiles")
+
+```
+```{r}
+var_test <- chisq.test(df_budget$budget)
+print(var_test)
+```
+```{r}
+prop_test <- prop.test(sum(df_budget$revenue > 0.4), length(df_budget$revenue))
+print(prop_test)
+```
+```{r}
+regression_model <- lm(revenue ~ budget, data = df_budget)
+print(regression_model)
+```
+```{r}
+anova_result <- aov(revenue ~ factor(original_language), data = df_budget)
+print(anova_result)
+```
+
+```{r}
+correlation_test <- cor.test(df_budget$budget, df_budget$revenue, method = "pearson")
+print(correlation_test)
+```
+
+
+
+```{r}
+multiple_regression_model <- lm(revenue ~ budget + vote_average, data = df_budget)
+print(multiple_regression_model)
 ```
 
