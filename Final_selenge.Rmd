@@ -25,7 +25,7 @@ library(caret)
 
 # Introduction
 
-Every dataset has a story to tell, and ours is no exception. It's a tale of trends and fluctuations, of insights and surprises, waiting to be articulated. 
+Every dataset has a story to tell, and ours is no exception. It's a tale of trends and fluctuations, of insights and surprises, waiting to be articulated. In this dataset, we will find what factor determine movie's revenue and ranking.
 
 # Dataset
 
@@ -93,16 +93,17 @@ summary(df_movies$ratio)
 
 In this section we'd like to go over the different factors that play into movie revenue. In particular, we try to answer the following questions:
 
-1. **Distance**: It's easier to mine asteroids the closer they are. On average, is the mean distance of NEO asteroids less than 1 AU?
+1. **Budget**:
 
-2. **Material**: Metallic resources are more valuable and thus metallic asteroids should be sought out for mining. Does NEO asteroids have proportionately more metallic asteroids than non-NEO asteroids?
+2. **Release date**: 
 
-3. **Asteroid size**: Large asteroids have more resources than smaller asteroids. On average, is the mean diameter of NEO asteroids smaller than non-NEO asteroids?
+3. **Runtime**: 
 
-4. **Diameter difference**: There are 4 different types of NEO asteroids. Is there a significant difference between their average diameter?
+4. **Language**: 
 
-5. **Value difference**: From a material value standpoint, which NEO type is the best to mine?
+5. **Genres**: 
 
+## Movies Budget
 
 ```{r}
 n_pop <- ceiling(log2(length(df_movies$popularity))) + 1
