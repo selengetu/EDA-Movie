@@ -1,138 +1,173 @@
 ---
-output:
-  pdf_document: default
-  html_document: default
----
----
-title: "DSCC462 Final project- Selenge Tulga"
-output:
-  pdf_document: 
-    latex_engine: xelatex
-  html_document:
-    df_print: paged
-subtitle: Analyzing IMDB movies.
-fontsize: 12pt
+title: "Movie Revenue Analysis"
+author:" Selenge Tulga"
+date: "2023-12-14"
+output: 
+  pdf_document:
+    number_sections: true
+bibliography: references.bib
+csl: ieee.csl
 ---
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = T, eval=T,tidy=TRUE, tidy.opts=list(width.cutoff=60))
+knitr::opts_chunk$set(dev = "png",
+                      dpi = 300,
+                      echo = FALSE,
+                      cache = TRUE)
+
+library(ggplot2)
+library(dplyr)
+library(MASS)
+library(corrplot)
+library(caret)
 ```
 
 \vspace{5pt}
 
-1. Loading dataset
+# Introduction
+
+Every dataset has a story to tell, and ours is no exception. It's a tale of trends and fluctuations, of insights and surprises, waiting to be articulated. 
+
+# Dataset
+
+To conduct this research, we utilize information obtained from the IMDB dataset, which is accessible on Kaggle.
 ```{r}
 movies <- read.csv("/Users/selengetulga/Downloads/Fall 2023/DSCC 462/Final/TMDB_movie_dataset_v11.csv")
-nrow(movies)
+
+sprintf("Dataset has %d rows and %d columns", nrow(movies), ncol(movies))
 ```
-```{r}
-#Remove unnecessary columns
-movies$poster_path <- NULL
-movies$homepage <- NULL
-movies$backdrop_path <- NULL
-movies$imdb_id <- NULL
+# Data Processing
+
+Before moving forward with our analysis, we first need to process the dataset.
+
+## Attribute Selection
+
+The dataset contains 31 columns, all of which we don't need. So, we first select the columns we need and discard the rest.
+
+```{r Attribute_Selection, echo=T}
+movies <- movies[c("id", "title", "vote_average", "vote_count", "release_date", "revenue", "runtime", "adult", "budget", "original_language",
+           "popularity", "genres", "production_companies", "production_countries")]
+sprintf("Number of columns in dataset: %d", ncol(movies))
 ```
 
-Part 1 - Descriptive Statistics
+Let's first see what percentage of the columns are missing.We have to fill in the
+missing values as well as we can.
 
-Analyze the relationship between budget, revenue, and popularity to determine factors that contribute to a movie's success.
+```{r Imputation Missing value percentage for each column, echo=T}
+missing_percentage <- colMeans(is.na(movies)) * 100
+sorted_missing <- sort(missing_percentage, decreasing = TRUE)
+
+formatted_missing <- sprintf("%2.6f%%", sorted_missing)
+
+result_df <- data.frame(Column = names(sorted_missing), 
+                        MissingPercentage = formatted_missing)
+print(result_df)
+```
+Some budget, revenue value are between 1 and 100. Now we set limitation in some fields. Movie's budget and revenue are greater than 10K and voting count is greater than 400 people.
+
 ```{r}
-df_budget= movies[movies$budget > 0 & movies$revenue> 0 & movies$popularity> 0 ,] 
-dim(df_budget)
+df_movies= movies[movies$budget > 10000 & movies$revenue> 10000 & movies$popularity> 0 & movies$runtime> 0 & movies$vote_count>400,] 
+dim(df_movies)
+```
+## Custom Columns
+
+### Ration of budget and revenue
+
+$$
+ratio = revenue/ budget
+$$
+```{r Custom_Columns Distance from Earth, echo=T}
+df_movies$ratio <- (df_movies$revenue/df_movies$budget)
+summary(df_movies$ratio)
 ```
 
+### Movie budget types
+
+
+### Revenue Type
+
+
+### Movie Release Season
+
+
+# Exploratory Data Analysis
+
+In this section we'd like to go over the different factors that play into movie revenue. In particular, we try to answer the following questions:
+
+1. **Distance**: It's easier to mine asteroids the closer they are. On average, is the mean distance of NEO asteroids less than 1 AU?
+
+2. **Material**: Metallic resources are more valuable and thus metallic asteroids should be sought out for mining. Does NEO asteroids have proportionately more metallic asteroids than non-NEO asteroids?
+
+3. **Asteroid size**: Large asteroids have more resources than smaller asteroids. On average, is the mean diameter of NEO asteroids smaller than non-NEO asteroids?
+
+4. **Diameter difference**: There are 4 different types of NEO asteroids. Is there a significant difference between their average diameter?
+
+5. **Value difference**: From a material value standpoint, which NEO type is the best to mine?
+
 
 ```{r}
-summary(df_budget)
-```
-```{r}
-n_pop <- ceiling(log2(length(df_budget$popularity))) + 1
+n_pop <- ceiling(log2(length(df_movies$popularity))) + 1
 sprintf("Bin number of popularity: %d", n_pop)
 
-n_rev <- ceiling(log2(length(df_budget$revenue))) + 1
+n_rev <- ceiling(log2(length(df_movies$revenue))) + 1
 sprintf("Bin number of revenue: %d", n_pop)
 
-n_bud <- ceiling(log2(length(df_budget$budget))) + 1
+n_bud <- ceiling(log2(length(df_movies$budget))) + 1
 sprintf("Bin number of budget: %d", n_pop)
-```
-```{r}
-library(ggplot2)
-hist1 <- ggplot(df_budget, aes(x = budget)) + geom_histogram(bins = 15)
-hist1 <- hist1 + ggtitle("Histogram of Movie Budget")
-hist1
+
+n_bud <- ceiling(log2(length(df_movies$runtime))) + 1
+sprintf("Bin number of runtime: %d", n_pop)
 ```
 
 ```{r}
-quantile(df_budget$budget, c(0.2, 0.8))
-IQR(df_budget$budget)
-```
-```{r}
-ss <- 1.5 * IQR(df_budget$budget)
-ss
-lf <- quantile(df_budget$budget, 0.25) - ss
-lf
-uf <- quantile(df_budget$budget, 0.75) + ss
-uf
-```
-    
-```{r}
-sum(df_budget$budget < lf)
-
-sum(df_budget$budget > uf)
-```
-```{r}
-var(df_budget$budget)
-sd(df_budget$budget)
-sd(df_budget$budget)/mean(df_budget$budget)
+e_budget = (df_movies$budget)/ 1e6
 ```
 
+
 ```{r}
-library(moments) 
-skewness(df_budget$budget)
+e_revenue = (df_movies$revenue)/ 1e6
+relative_freq_table <- prop.table(table(e_budget))
+absolute_freq_table <- table(e_budget)
 ```
 
-```{r}
-relative_freq_table <- prop.table(table((df_budget$budget)/ 1e6))
-
-absolute_freq_table <- table((df_budget$budget)/ 1e6)
-```
 
 ```{r}
-barplot(relative_freq_table, main = "Relative Frequency Barplot")
 
-# Absolute frequency barplot
-barplot(absolute_freq_table, main = "Absolute Frequency Barplot")
-```
-
-```{r}
-relative_freq_table_rv <- prop.table(table((df_budget$revenue)/ 1e6))
-
-absolute_freq_table_rv <- table((df_budget$revenue)/ 1e6)
-```
-
-```{r}
-if (!requireNamespace("scales", quietly = TRUE)) {
-  install.packages("scales")
-}
-library(scales)
-
-barplot(relative_freq_table_rv, main = "Relative Frequency Barplot", xlab = "Budget (in millions)")
-
-# Absolute frequency barplot with budgets in millions
-barplot(absolute_freq_table_rv, main = "Absolute Frequency Barplot", xlab = "Budget (in millions)")
-
-```
-```{r}
-# Center
-mean_budget <- mean(df_budget$budget)
-median_budget <- median(df_budget$budget)
-mode_budget <- as.numeric(names(sort(table(df_budget$budget), decreasing = TRUE)[1]))
-trimmed_mean_budget <- mean(df_budget$budget, trim = 0.1)
+library(e1071)
+library(DescTools)
+mean_runtime <- mean(df_movies$runtime)
+median_runtime <- median(df_movies$runtime)
+mode_runtime <- as.numeric(names(sort(table(df_movies$runtime), decreasing = TRUE)[1]))
+trimmed_mean_runtime <- mean(df_movies$runtime, trim = 0.1)
 
 # Dispersion
-iqr_budget <- IQR(df_budget$budget)
-variance_budget <- var(df_budget$budget)
-cv_budget <- sd(df_budget$budget) / mean(df_budget$budget)
-skewness_budget <- skewness(df_budget$budget)
+iqr_runtime <- IQR(df_movies$runtime)
+variance_runtime <- var(df_movies$runtime)
+cv_runtime <- sd(df_movies$runtime) / mean(df_movies$runtime)
+skewness_runtime <- skewness(df_movies$runtime)
+
+print(paste("Mean:", mean_runtime))
+print(paste("Median:", median_runtime))
+print(paste("Mode:", mode_runtime))
+print(paste("Trimmed Mean (10%):", trimmed_mean_runtime))
+print(paste("IQR:", iqr_runtime))
+print(paste("Variance:", variance_runtime))
+print(paste("Coefficient of Variation:", cv_runtime))
+print(paste("Skewness:", skewness_runtime))
+```
+
+```{r}
+#Budget statistic
+# Center
+mean_budget <- mean(df_movies$budget)
+median_budget <- median(df_movies$budget)
+mode_budget <- Mode(df_movies$budget)
+trimmed_mean_budget <- mean(df_movies$budget, trim = 0.1)
+
+# Dispersion
+iqr_budget <- IQR(df_movies$budget)
+variance_budget <- var(df_movies$budget)
+cv_budget <- sd(df_movies$budget) / mean(df_movies$budget)
+skewness_budget <- skewness(df_movies$budget)
 
 print(paste("Mean:", mean_budget))
 print(paste("Median:", median_budget))
@@ -145,17 +180,18 @@ print(paste("Skewness:", skewness_budget))
 
 ```
 ```{r}
+#Revenue statistic
 # Center
-mean_revenue <- mean(df_budget$revenue)
-median_revenue <- median(df_budget$revenue)
-mode_revenue <- as.numeric(names(sort(table(df_budget$revenue), decreasing = TRUE)[1]))
-trimmed_mean_revenue <- mean(df_budget$revenue, trim = 0.1)
+mean_revenue <- mean(df_movies$revenue)
+median_revenue <- median(df_movies$revenue)
+mode_revenue <- as.numeric(names(sort(table(df_movies$revenue), decreasing = TRUE)[1]))
+trimmed_mean_revenue <- mean(df_movies$revenue, trim = 0.1)
 
 # Dispersion
-iqr_revenue <- IQR(df_budget$revenue)
-variance_revenue <- var(df_budget$revenue)
-cv_revenue <- sd(df_budget$budget) / mean(df_budget$revenue)
-skewness_revenue <- skewness(df_budget$revenue)
+iqr_revenue <- IQR(df_movies$revenue)
+variance_revenue <- var(df_movies$revenue)
+cv_revenue <- sd(df_movies$budget) / mean(df_movies$revenue)
+skewness_revenue <- skewness(df_movies$revenue)
 
 print(paste("Mean:", mean_revenue))
 print(paste("Median:", median_revenue))
@@ -167,64 +203,155 @@ print(paste("Coefficient of Variation:", cv_revenue))
 print(paste("Skewness:", skewness_revenue))
 ```
 ```{r}
-# Scatterplot
-e_budget <-(df_budget$budget)/ 1e6
-e_revenue <-(df_budget$revenue)/ 1e6
+#Popularity statistic
+# Center
+mean_popularity <- mean(df_movies$popularity)
+median_popularity <- median(df_movies$popularity)
+mode_popularity <- as.numeric(names(sort(table(df_movies$popularity), decreasing = TRUE)[1]))
+trimmed_mean_popularity <- mean(df_movies$popularity, trim = 0.1)
+
+# Dispersion
+iqr_popularity <- IQR(df_movies$popularity)
+variance_popularity <- var(df_movies$popularity)
+cv_popularity <- sd(df_movies$popularity) / mean(df_movies$popularity)
+skewness_popularity <- skewness(df_movies$popularity)
+
+print(paste("Mean:", mean_popularity))
+print(paste("Median:", median_popularity))
+print(paste("Mode:", mode_popularity))
+print(paste("Trimmed Mean (10%):", trimmed_mean_popularity))
+print(paste("IQR:", iqr_popularity))
+print(paste("Variance:", variance_popularity))
+print(paste("Coefficient of Variation:", cv_popularity))
+print(paste("Skewness:", skewness_popularity))
+```
+```{r}
+#Vote statistic
+# Center
+mean_vote_average <- mean(df_movies$vote_average)
+median_vote_average <- median(df_movies$vote_average)
+mode_vote_average <- as.numeric(names(sort(table(df_movies$vote_average), decreasing = TRUE)[1]))
+trimmed_mean_vote_average <- mean(df_movies$vote_average, trim = 0.1)
+
+# Dispersion
+iqr_vote_average <- IQR(df_movies$vote_average)
+variance_vote_average <- var(df_movies$vote_average)
+cv_vote_average <- sd(df_movies$vote_average) / mean(df_movies$vote_average)
+skewness_vote_average <- skewness(df_movies$vote_average)
+
+print(paste("Mean:", mean_vote_average))
+print(paste("Median:", median_vote_average))
+print(paste("Mode:", mode_vote_average))
+print(paste("Trimmed Mean (10%):", trimmed_mean_vote_average))
+print(paste("IQR:", iqr_vote_average))
+print(paste("Variance:", variance_vote_average))
+print(paste("Coefficient of Variation:", cv_vote_average))
+print(paste("Skewness:", skewness_vote_average))
+```
+```{r}
+#Vote-count statistic
+# Center
+mean_vote_count <- mean(df_movies$vote_count)
+median_vote_count <- median(df_movies$vote_count)
+mode_vote_count <- as.numeric(names(sort(table(df_movies$vote_count), decreasing = TRUE)[1]))
+trimmed_mean_vote_count <- mean(df_movies$vote_average, trim = 0.1)
+
+# Dispersion
+iqr_vote_count <- IQR(df_movies$vote_count)
+variance_vote_count <- var(df_movies$vote_count)
+cv_vote_count <- sd(df_movies$vote_count) / mean(df_movies$vote_count)
+skewness_vote_count <- skewness(df_movies$vote_count)
+
+print(paste("Mean:", mean_vote_count))
+print(paste("Median:", median_vote_count))
+print(paste("Mode:", mode_vote_count))
+print(paste("Trimmed Mean (10%):", trimmed_mean_vote_count))
+print(paste("IQR:", iqr_vote_count))
+print(paste("Variance:", variance_vote_count))
+print(paste("Coefficient of Variation:", cv_vote_count))
+print(paste("Skewness:", skewness_vote_count))
+```
+
+
+```{r}
+# Scatterplot of Budget
+
 plot(e_budget, e_revenue, main = "Scatterplot", xlab = "Budget", ylab = "Revenue")
 ```
 ```{r}
 # Covariance
-covariance <- cov(df_budget$budget, df_budget$revenue)
+covariance <- cov(df_movies$budget, df_movies$revenue)
 print(paste("Covariance:", covariance))
 ```
 
 ```{r}
+# Scatterplot of Budget
+plot(df_movies$runtime, df_movies$vote_average, main = "Scatterplot of runtime and vote", xlab = "runtime", ylab = "Vote")
+```
+
+```{r}
 # Histogram with mean and median lines
-hist(e_budget, main = "Histogram", xlab = "Budget", col = "lightblue", border = "black", xlim = c(0, max(e_budget)))
+hist(df_movies$budget, main = "Histogram of budget", xlab = "Budget", col = "lightblue", border = "black", xlim = c(0, max(df_movies$budget)))
 abline(v = mean_budget, col = "red", lwd = 2)
 abline(v = median_budget, col = "blue", lwd = 2)
+abline(v = mode_budget, col = "green", lwd = 2)
 
 ```
 
 ```{r}
 # Histogram with mean and median lines
-hist(e_revenue, main = "Histogram", xlab = "Budget", col = "lightblue", border = "black", xlim = c(0, max(e_revenue)))
-abline(v = mean_budget, col = "red", lwd = 2)
-abline(v = median_budget, col = "blue", lwd = 2)
+hist(df_movies$revenue, main = "Histogram of revenue", xlab = "Budget", col = "lightblue", border = "black", xlim = c(0, max(df_movies$revenue)))
+abline(v = mean_revenue, col = "red", lwd = 2)
+abline(v = median_revenue, col = "blue", lwd = 2)
+abline(v = mode_revenue, col = "green", lwd = 2)
 ```
 ```{r}
-qqplot(qnorm(ppoints(nrow(df_budget))), df_budget$budget,
+# Histogram with mean and median lines
+hist(df_movies$runtime, main = "Histogram of runtime", xlab = "Budget", col = "lightblue", border = "black", xlim = c(0, max(df_movies$runtime)))
+abline(v = mean_runtime, col = "red", lwd = 2)
+abline(v = median_runtime, col = "blue", lwd = 2)
+abline(v = mode_runtime, col = "green", lwd = 2)
+```
+
+```{r}
+qqplot(qnorm(ppoints(nrow(df_movies))), df_movies$budget,
        main = "Quantile Plot",
        xlab = "Theoretical Quantiles",
        ylab = "Sample Quantiles")
 
 ```
 ```{r}
-var_test <- chisq.test(df_budget$budget)
+(unique(df_movies$status))
+```
+
+
+
+
+```{r}
+var_test <- chisq.test(df_movies$budget)
 print(var_test)
 ```
 ```{r}
-prop_test <- prop.test(sum(df_budget$revenue > 0.4), length(df_budget$revenue))
+prop_test <- prop.test(sum(df_movies$revenue > 0.01), length(df_movies$revenue))
 print(prop_test)
 ```
 ```{r}
-regression_model <- lm(revenue ~ budget, data = df_budget)
+regression_model <- lm(revenue ~ budget, data = df_movies)
 print(regression_model)
 ```
 ```{r}
-anova_result <- aov(revenue ~ factor(original_language), data = df_budget)
+anova_result <- aov(revenue ~ factor(original_language), data = df_movies)
 print(anova_result)
 ```
 
 ```{r}
-correlation_test <- cor.test(df_budget$budget, df_budget$revenue, method = "pearson")
+correlation_test <- cor.test(df_movies$budget, df_movies$revenue, method = "pearson")
 print(correlation_test)
 ```
 
 
-
 ```{r}
-multiple_regression_model <- lm(revenue ~ budget + vote_average, data = df_budget)
+multiple_regression_model <- lm(revenue ~ budget + vote_average, data = df_movies)
 print(multiple_regression_model)
 ```
 
